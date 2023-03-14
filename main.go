@@ -70,7 +70,6 @@ func main() {
 	}
 
 	bash, err := ParseBash(respText)
-	fmt.Println("bash", bash)
 	if err != nil {
 		ErrLog("parse bash error: %s", err)
 		fmt.Println(err.Error())
