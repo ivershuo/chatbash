@@ -53,7 +53,7 @@ func main() {
 		fmt.Println("The command you entered is invalid.")
 		return
 	}
-	InfoLog("Launch command：%s", q)
+	InfoLog("ask for%s", q)
 
 	openchat := NewChat(key, initMessage)
 
