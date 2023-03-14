@@ -5,7 +5,13 @@ name: Chatbash release
 
 on:
   push:
-    branches: [ "main" ]
+    branches:
+      - '**'
+    tags:
+      - 'v*'
+  pull_request:
+    branches:
+      - '**'
 
 jobs:
   release:
