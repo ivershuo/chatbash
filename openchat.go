@@ -89,8 +89,10 @@ func (oc *OpenChat) CompletionStream(content string, chars chan<- string, errs c
 	}
 }
 
-func (oc *OpenChat) GetConversation() {
+func (oc *OpenChat) GetConversation() string {
+	var conversation string
 	for _, message := range oc.messages {
-		fmt.Println(message)
+		conversation += fmt.Sprintf("<%s>: %s\n", message.Role, message.Content)
 	}
+	return conversation
 }

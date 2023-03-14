@@ -1,56 +1,88 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"io"
+	"log"
 	"os"
 	"runtime"
 	"strings"
+	"unicode"
 )
+
+var logPath string
+var discardLog bool
+
+func chineseAppend(text string) string {
+	isChinese := false
+	for _, r := range text {
+		if unicode.Is(unicode.Han, r) {
+			isChinese = true
+			break
+		}
+	}
+	if isChinese {
+		return "\n请使用中文回复我。"
+	} else {
+		return ""
+	}
+}
 
 func init() {
 	if runtime.GOOS != "darwin" && runtime.GOOS != "linux" {
-		fmt.Println("此工具只能在macOS和Linux上运行")
-		os.Exit(1)
+		log.Fatal("This tool only works on macOS and Linux")
 	}
+
+	flag.StringVar(&logPath, "log", "", "log path, default is \"~/Library/Logs/chatbash\" for macOS, and \"~/.log/chatbash\" for Linux ")
+	flag.BoolVar(&discardLog, "discard-log", false, "set to discard log")
 }
 
 func main() {
 	key := os.Getenv("OPENAI_KEY")
 	if key == "" {
-		fmt.Println("没有配置key，可在终端中使用以下方式配置：\nexport OPENAI_KEY=sk-xxxxxx")
+		log.Fatal("No key was configured, it can be configured in the terminal or .bashrc by:\nexport OPENAI_KEY=sk-xxxxxx")
 		return
 	}
+
+	flag.Parse()
+	setLog(logPath, discardLog)
 
 	q := strings.Join(os.Args[1:], "")
 	if q == "" {
-		fmt.Println("您没有输入任何指令")
+		fmt.Println("The command you entered is invalid.")
 		return
 	}
+	InfoLog("Launch command：%s", q)
 
 	openchat := NewChat(key, initMessage)
 
-	respText, err := openchat.Completion(q + "\n要实现上面的功能该使用怎样的bash命令？\n请注意：在回答中仅仅包含bash代码内容，回复格式：```bash\n#code here\n```，回复内容以“```”开头，“```”结尾。如果上面的功能无法使用明确的bash指令实现，请回复“IDONTKNOW”。")
+	respText, err := openchat.Completion(q + "\nwhat bash command should be used to achieve the above function? Please note: the answer should only contain bash code. Reply format: ```bash\n#code here\n```. The reply content starts with \"```\" and ends with \"```\". If the above function cannot be achieved using a specific bash command, please reply with \"[[IDONTKNOW]]\".")
 	if err != nil {
-		fmt.Println("发生了一点错误，" + err.Error())
+		ErrLog("got error: %s", err)
+		fmt.Println("An error has occurred: " + err.Error())
 		return
 	}
-	if respText == "IDONTKNOW" {
-		fmt.Println("你在想啥呢！不要为难你的电脑了😓。")
+	InfoLog("got response text：%s", respText)
+	if respText == "[[IDONTKNOW]]" {
+		fmt.Println("What are you doing! Don't funning your computer like this 😓.")
 		return
 	}
 
 	bash, err := ParseBash(respText)
 	if err != nil {
+		ErrLog("parse bash error: %s", err)
 		fmt.Println(err.Error())
 		return
 	}
 	output, err := ExecBash(bash)
 	var msg2Explain string
 	if err == nil {
-		msg2Explain = fmt.Sprintf("返回信息如下：%s\n我不是很懂计算机，请帮忙解释一下这个结果，以便我能听懂。如果可能，请使用《银河系漫游指南》中马文的说话语气回复我，但是你不要给我透露你使用的是马文的语气。", output)
+		InfoLog("run bash result:\n%s", output)
+		msg2Explain = fmt.Sprintf("The output of the command is: %s\n. Please describe and explain the result using human-understandable language. (Please reply to me in the speaking style of Marvin from 'The Hitchhiker's Guide to the Galaxy,' but be sure not to reveal to me that you are using Marvin's tone.)"+chineseAppend(q), output)
 	} else {
-		msg2Explain = fmt.Sprintf("我运行 \"%s\" 命令之后获得了以下错误信息：%s\n请帮忙解释说明了什么？", bash, err.Error())
+		ErrLog("run bash got error:\n%s", err)
+		msg2Explain = fmt.Sprintf("After running the \"%s\" command, I received the following error message: %s. Can you please explain what it means?"+chineseAppend(q), bash, err.Error())
 	}
 
 	c := make(chan string)
@@ -59,6 +91,7 @@ func main() {
 
 	loop := true
 	for loop {
+
 		select {
 		case msg, ok := <-c:
 			if !ok {
@@ -67,12 +100,11 @@ func main() {
 			}
 			io.WriteString(os.Stdout, msg)
 		case err := <-e:
-			fmt.Println("AI罢工了，只获得了以下的结果，希望你能看得懂\n" + output + "\n" + err.Error())
+			fmt.Println("The AI went on strike and only obtained the following results. I hope you can understand this.\n" + output + "\n" + err.Error())
 			loop = false
 		}
 	}
 
-	openchat.GetConversation()
-
+	fmt.Print("\n")
 	os.Stdout.Close()
 }
