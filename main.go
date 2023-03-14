@@ -57,7 +57,7 @@ func main() {
 
 	openchat := NewChat(key, initMessage)
 
-	respText, err := openchat.Completion(q + "\nwhat bash command should be used to achieve the above function? Please note: the answer should only contain bash code. Reply format: ```bash\n#code here\n```. The reply content starts with \"```\" and ends with \"```\". If the above function cannot be achieved using a specific bash command, please reply with \"[[IDONTKNOW]]\".")
+	respText, err := openchat.Completion(q + "\nwhat bash command should be used to achieve the above function? Please note: the answer should only contain bash code. Reply format: ```bash\n#code here\n```, and put the bash code in one line. The reply content starts with \"```\" and ends with \"```\". If the above function cannot be achieved using a specific bash command, please reply with \"[[IDONTKNOW]]\".")
 	if err != nil {
 		ErrLog("got error: %s", err)
 		fmt.Println("An error has occurred: " + err.Error())
@@ -70,6 +70,7 @@ func main() {
 	}
 
 	bash, err := ParseBash(respText)
+	fmt.Println("bash", bash)
 	if err != nil {
 		ErrLog("parse bash error: %s", err)
 		fmt.Println(err.Error())
