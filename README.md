@@ -1,4 +1,4 @@
-# An OpenAI-based tools to control your 💻
+# An OpenAI-based tool to control your 💻
 
 ## REQUIRE
 Linux or macOS with `bash`
@@ -10,11 +10,12 @@ export OPENAI_KEY=sk-xxxxxx
 ```
 
  ## EXAMPLES
-<image src="https://user-images.githubusercontent.com/398532/225017872-dd17e4b6-2391-4f4d-b15a-7cee37b0fb98.png" width="80%">
+<image src="https://user-images.githubusercontent.com/398532/225017872-dd17e4b6-2391-4f4d-b15a-7cee37b0fb98.png" width="90%">
 
 ## MORE
 ```bash
 chatbash --help
 ```
-
-> The answer is not friendly enough and needs to be adjusted.
+---
+- The answer is not friendly enough and needs to be adjusted.
+- ⚠️Executing commands such as file deletion can be risky.
